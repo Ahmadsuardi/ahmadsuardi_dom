@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Planner - Manajemen Aktivitas</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS (DARI dom3.css) --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        header p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        #listJadwal {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .item-jadwal {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3498db;
+            transition: all 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .item-jadwal:hover {
+            transform: translateX(5px);
+        }
+
+        .selesai {
+            border-left-color: #27ae60;
+            opacity: 0.6;
+        }
+
+        .selesai .konten {
+            text-decoration: line-through;
+        }
+
+        .btn-hapus {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .btn-hapus:hover {
+            background-color: #c0392b;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #eee;
+        }
+
+        h3 {
+            font-size: 1rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Daily Planner 📅</h1>
+        <p>Kelola jadwal harian dengan lebih produktif</p>
+    </header>
+
+    <div class="input-section">
+        <div class="input-group">
+            <label for="aktivitas">Nama Aktivitas</label>
+            <input type="text" id="aktivitas" placeholder="Masukkan Aktifitas Hari ini">
+        </div>
+
+        <div class="input-group">
+            <label for="waktuAktivitas">Waktu Pelaksanaan</label>
+            <input type="time" id="waktuAktivitas">
+        </div>
+        
+        <button id="btnTambah" class="btn-primary">Tambahkan ke Jadwal</button>
+    </div>
+
+    <hr>
+
+    <div class="list-section">
+        <h3>Daftar Rencana Anda</h3>
+        <ul id="listJadwal"></ul>
+    </div>
+</div>
+
+<script>
+    /* --- JAVASCRIPT (DARI dom2.js) --- */
+
+    // 1. Inisialisasi Elemen
+    const inputAktivitas = document.getElementById('aktivitas');
+    const inputWaktu = document.getElementById('waktuAktivitas');
+    const btnTambah = document.getElementById('btnTambah');
+    const listJadwal = document.getElementById('listJadwal');
+
+    // FUNGSI 1: Menambah Jadwal Baru
+    function tambahJadwal() {
+        const teksAktivitas = inputAktivitas.value.trim();
+        const teksWaktu = inputWaktu.value;
+
+        if (teksAktivitas === "" || teksWaktu === "") {
+            alert("Mohon isi aktivitas dan waktunya!");
+            return;
+        }
+
+        const li = document.createElement('li');
+        li.classList.add('item-jadwal'); 
+        
+        li.innerHTML = `
+            <span class="konten">
+                <strong>${teksWaktu}</strong> - ${teksAktivitas}
+            </span>
+            <button class="btn-hapus">Hapus</button>
+        `;
+
+        listJadwal.appendChild(li);
+
+        // Reset Form
+        inputAktivitas.value = "";
+        inputWaktu.value = "";
+        inputAktivitas.focus(); // Fokus kembali ke input teks
+    }
+
+    // FUNGSI 2 & 3: Menghapus & Menandai Selesai (Event Delegation Terpadu)
+    listJadwal.addEventListener('click', function(e) {
+        // Jika yang diklik tombol hapus
+        if (e.target.classList.contains('btn-hapus')) {
+            e.target.parentElement.remove();
+            return;
+        }
+
+        // Jika yang diklik adalah area item (untuk toggle selesai)
+        const targetLi = e.target.closest('li');
+        if (targetLi) {
+            targetLi.classList.toggle('selesai');
+        }
+    });
+
+    // FUNGSI 4: Validasi Karakter Input
+    inputAktivitas.addEventListener('input', function() {
+        if (this.value.length > 50) {
+            this.style.borderColor = "red";
+        } else {
+            this.style.borderColor = "#ddd";
+        }
+    });
+
+    // FUNGSI 5: Shortcut Enter
+    inputAktivitas.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            tambahJadwal();
+        }
+    });
+
+    // Event Listener Utama pada Tombol
+    btnTambah.addEventListener('click', tambahJadwal);
+</script>
+
+</body>
+</html>
