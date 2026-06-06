@@ -45,6 +45,13 @@
       border-radius: 4px;
       min-height: 40px;
     }
+    #aiImage {
+      max-width:100%;
+      border-radius:8px;
+      margin-top:12px;
+      display:none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
@@ -54,7 +61,6 @@
   <p>Masukkan riwayat pencarian film atau genre Anda untuk mendapatkan rekomendasi tontonan dari AI.</p>
 
   <input id="searchQuery" placeholder="contoh: Spider-Man, Action, Horor komedi...">
-
   <button onclick="tambahRiwayat()">Tambah Pencarian</button>
   <button onclick="dapatkanRekomendasi()">Dapatkan Rekomendasi AI</button>
 
@@ -68,119 +74,95 @@
 
   <h3>Generate Poster Film Khusus (AI):</h3>
   <p style="font-size: 14px; color: #666;">AI akan membuat poster film fiktif berdasarkan selera riwayat Anda.</p>
-  <button onclick="generatePoster()">Buat Poster AI</button>
+  <button id="generateBtn" style="display:inline-block;" onclick="generatePoster()">Buat Poster AI</button>
   <div id="imageStatus" class="box" style="border:none; background:none; padding:0; min-height: auto; margin-top: 10px;">Belum ada poster.</div>
-  <img id="aiImage" style="max-width:100%; border-radius:8px; margin-top:12px; display:none; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+  <img id="aiImage">
 </div>
 
 <script>
 let riwayatPencarian = [];
+let hasilAnalisis = "";
+
+// Ganti URL dengan backend temanmu
+const ANALYZE_API = "https://projek-film-backend.vercel.app/api/analyze";
+const IMAGE_API = "https://projek-film-backend.vercel.app/api/generate-poster";
 
 function render() {
-  let text = "";
-
-  riwayatPencarian.forEach((pencarian, i) => {
-    text += (i + 1) + ". " + pencarian + "\n";
-  });
-
-  document.getElementById("totalPencarian").innerText =
-    "Total riwayat: " + riwayatPencarian.length + " pencarian";
-
-  document.getElementById("list").innerText =
-    text || "Belum ada riwayat pencarian.";
+  let text = riwayatPencarian.map((p, i) => `${i+1}. ${p}`).join("\n");
+  document.getElementById("totalPencarian").innerText = `Total riwayat: ${riwayatPencarian.length} pencarian`;
+  document.getElementById("list").innerText = text || "Belum ada riwayat pencarian.";
 }
 
 function tambahRiwayat() {
   const query = document.getElementById("searchQuery").value.trim();
-
   if (!query) return alert("Masukkan judul atau genre film terlebih dahulu!");
-
   riwayatPencarian.push(query);
-
   document.getElementById("searchQuery").value = "";
-
+  resetPoster();
   render();
 }
 
+function resetPoster() {
+  hasilAnalisis = "";
+  document.getElementById("result").innerText = "Belum dianalisis.";
+  document.getElementById("aiImage").style.display = "none";
+  document.getElementById("aiImage").src = "";
+  document.getElementById("imageStatus").innerText = "Belum ada poster.";
+}
+
 async function dapatkanRekomendasi() {
-  if (riwayatPencarian.length === 0) {
-    alert("Tambahkan riwayat pencarian terlebih dahulu!");
-    return;
-  }
-
+  if (riwayatPencarian.length === 0) return alert("Tambahkan riwayat pencarian terlebih dahulu!");
   document.getElementById("result").innerText = "Menganalisis selera film Anda...";
-
-  const daftarRiwayat = riwayatPencarian.map((p, i) => (i + 1) + ". " + p).join("\n");
+  resetPoster();
+  const daftarRiwayat = riwayatPencarian.join(", ");
 
   try {
-    // Catatan: Ganti URL API di bawah ini dengan backend AI Anda yang sebenarnya
-    const res = await fetch("https://activity-ai-backend.vercel.app/api/recommend-movie", {
+    const res = await fetch(ANALYZE_API, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        search_history: daftarRiwayat
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ search_history: daftarRiwayat })
     });
-
     const json = await res.json();
-
-    document.getElementById("result").innerText =
-      json.result || json.error || "Tidak ada rekomendasi yang ditemukan.";
-
+    hasilAnalisis = json.result || "";
+    document.getElementById("result").innerText = hasilAnalisis || json.error || "Tidak ada rekomendasi yang ditemukan.";
   } catch {
-    document.getElementById("result").innerText = "Gagal menghubungi server AI. Pastikan endpoint sudah benar.";
+    document.getElementById("result").innerText = "Gagal menghubungi server AI.";
   }
 }
 
 async function generatePoster() {
-  if (riwayatPencarian.length === 0) {
-    document.getElementById("imageStatus").innerText =
-      "Masukkan riwayat pencarian terlebih dahulu agar AI tahu selera Anda.";
+  if (!riwayatPencarian.length) {
+    document.getElementById("imageStatus").innerText = "Masukkan riwayat pencarian terlebih dahulu agar AI tahu selera Anda.";
+    return;
+  }
+  if (!hasilAnalisis) {
+    document.getElementById("imageStatus").innerText = "Klik Dapatkan Rekomendasi AI terlebih dahulu.";
     return;
   }
 
-  document.getElementById("imageStatus").innerText =
-    "Sedang membuat poster inspirasi...";
+  document.getElementById("imageStatus").innerText = "Sedang membuat poster inspirasi...";
   document.getElementById("aiImage").style.display = "none";
 
-  const daftarRiwayat = riwayatPencarian.join(", ");
-
   try {
-    // Catatan: Ganti URL API di bawah ini dengan backend AI Anda yang sebenarnya
-    const res = await fetch("https://activity-ai-backend.vercel.app/api/generate-poster", {
+    const res = await fetch(IMAGE_API, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        themes: daftarRiwayat
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ themes: hasilAnalisis })
     });
-
     const json = await res.json();
-
     if (json.image) {
-      document.getElementById("aiImage").src =
-        "data:image/png;base64," + json.image;
-
+      document.getElementById("aiImage").src = `data:image/png;base64,${json.image}`;
       document.getElementById("aiImage").style.display = "block";
-      document.getElementById("imageStatus").innerText =
-        "Poster berhasil dibuat berdasarkan selera Anda!";
+      document.getElementById("imageStatus").innerText = "Poster berhasil dibuat berdasarkan selera Anda!";
     } else {
-      document.getElementById("imageStatus").innerText =
-        json.error || "Gagal membuat poster.";
+      document.getElementById("imageStatus").innerText = json.error || "Gagal membuat poster.";
     }
-
   } catch {
-    document.getElementById("imageStatus").innerText =
-      "Gagal menghubungi server pembuat gambar.";
+    document.getElementById("imageStatus").innerText = "Gagal menghubungi server pembuat gambar.";
   }
 }
 
 render();
 </script>
-
 </body>
 </html>
